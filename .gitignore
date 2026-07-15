@@ -1,0 +1,28 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Hidden Data and Secrets
+.env
+*.env
+.env.*
+
+# IDEs and Editors
+.idea/
+.vscode/
+
+# Databases (If using local SQLite for development)
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db
