@@ -4,10 +4,19 @@ from pydantic import BaseModel, Field, field_validator, EmailStr
 
 
 class UserRequest(BaseModel):
+    username: str = Field(..., max_length=20)
     email: EmailStr = Field(..., min_length=11)
     password: str = Field(..., max_length=20)
     is_admin: bool = Field(default=False, description="Are you admin yes/no ?")
     created_at: date = Field(default_factory=date.today)
+
+    @field_validator("username")
+    @classmethod
+    def check_username(cls, value: str) -> str:
+        if not value.isalpha():
+            raise ValueError("Not A Valid Username")
+
+        return value.lower()
 
     @field_validator("email")
     @classmethod

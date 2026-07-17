@@ -12,4 +12,4 @@ def home_page():
     }
 
 
-app.include_router(urls)
+app.include_router(urls.route)
