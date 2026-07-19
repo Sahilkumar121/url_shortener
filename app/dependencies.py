@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -10,6 +10,7 @@ from starlette import status
 from app.config import setting
 from app.database import SessionLocal
 from app.models.users import User
+from app.core.security import decode_access_token
 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
@@ -29,7 +30,9 @@ async def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, setting.SECRETE_KEY, algorithms=setting.ALGORITHM)
+        payload = decode_access_token(
+            token=token, secrete_key=setting.SECRETE_KEY, algorithm=setting.ALGORITHM
+        )
 
         user_id: str | None = payload.get("sub")
         if not user_id:

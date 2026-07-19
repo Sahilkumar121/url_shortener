@@ -2,6 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, Field, field_validator, EmailStr
 
+from typing import Optional
+
 
 class UserRequest(BaseModel):
     email: EmailStr = Field(..., min_length=11)
@@ -36,6 +38,12 @@ class UserRequest(BaseModel):
             raise ValueError("Date cannot be in the future")
 
         return value
+
+
+class UserUpdateRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    is_admin: Optional[bool] = None
+    created_at: Optional[date] = None
 
 
 class UserResponse(BaseModel):
