@@ -1,22 +1,24 @@
-from app.utils.short_code import generate_short_code
+import hashlib
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
-
-
-from app.dependencies import get_db
-from app.models.urls import Url
+ALPHABATE = "0123456789abcdefghijklmnopqrstUVwxyzABCDEFGHIJKLMNOPQURSTUVWXYZ"
+BASE = len(ALPHABATE)
 
 
-async def generate_unique_code(db: AsyncSession = Depends(get_db)):
-    for _ in range(5):
-        potential_code = generate_short_code()
-        code_stmt = select(Url).where(Url.short_code == potential_code)
-        code_result = await db.execute(code_stmt)
-        code_exists = code_result.scalar_one_or_none()
+def generate_unique_code(long_url: str, length: int = 6):
+    hash_hex = hashlib.md5(long_url.encode("utf-8")).hexdigest()
 
-        if not code_exists:
-            return potential_code
+    hash_int = int(hash_hex[:8], 16)
 
-    return None
+    if hash_int == 0:
+        return ALPHABATE[0]
+    else:
+        encoded = []
+        while hash_int > 0:
+            hash_int, remiander = divmod(hash_int, BASE)
+            encoded.append(ALPHABATE[remiander])
+
+        short_code = "".join(reversed(encoded))
+
+    short_code = short_code.rjust(length, ALPHABATE[0])
+
+    return short_code[:length]

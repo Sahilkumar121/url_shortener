@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user
 from app.models.urls import Url
 from app.models.users import User
+from app.models.click_events import ClickEvent
 from app.schemas.url import UrlRequest, UrlResponse, UrlBulkRequest, UrlUpdateRedquest
 from app.services.shortner import generate_unique_code
 from app.utils.qrcode import generate_qr_code
@@ -45,6 +46,33 @@ async def get_qrcode(
     return qrcode
 
 
+@route.get("/{short_code}/stat")
+async def get_short_code_stat(
+    short_code: str = Path(..., min_length=6, max_length=6, example="ACDEHG"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="You Are Not Authorized"
+        )
+
+    stmt = (
+        select(ClickEvent)
+        .join(Url, ClickEvent.url_id == Url.id)
+        .where(Url.short_code == short_code)
+    )
+    stat_result = await db.execute(stmt)
+    stat = stat_result.scalars().all()
+
+    if not stat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Url Status Not Found"
+        )
+
+    return stat
+
+
 @route.post("/", response_model=UrlResponse, status_code=status.HTTP_201_CREATED)
 async def post_url(
     url_request: UrlRequest,
@@ -64,7 +92,7 @@ async def post_url(
         return existing_url
 
     # 2. generate 6 digits random short code
-    short_code = generate_unique_code()
+    short_code = generate_unique_code(url_request.long_url)
 
     if not short_code:
         raise HTTPException(
@@ -123,7 +151,7 @@ async def post_bulk_url(
         if url.long_url in existing_url_map:
             final_url_list.append(url)
 
-        short_code = generate_unique_code()
+        short_code = generate_unique_code(url.long_url)
 
         if not short_code:
             raise HTTPException(
